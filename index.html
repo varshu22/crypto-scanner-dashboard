@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Tapewatch — Crypto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,600&family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0F15; --panel:#111826; --panel2:#161F2D; --line:#1E2B3C;
+  --text:#EAF1F7; --muted:#7E8CA0; --acc:#D9B36C; --acc-dim:rgba(217,179,108,.13);
+  --gold:#D9B36C; --gold-dim:rgba(217,179,108,.16);
+  --up:#3FBF8F; --up-dim:rgba(63,191,143,.13);
+  --dn:#E4586C; --dn-dim:rgba(228,88,108,.13);
+  --blue:#6AA5E8; --blue-dim:rgba(106,165,232,.13);
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --disp:'Sora',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 var(--disp);-webkit-font-smoothing:antialiased;padding-bottom:60px}
+a{color:inherit;text-decoration:none}
+button,select,input{font-family:inherit}
+header{position:sticky;top:0;z-index:20;background:rgba(11,15,21,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 16px}
+.hrow{display:flex;align-items:baseline;gap:12px;max-width:1100px;margin:0 auto}
+.wordmark{font-family:'Fraunces',serif;font-style:italic;font-weight:600;font-size:19px;color:var(--acc);letter-spacing:.3px}
+.htitle{font-weight:700;font-size:15px;letter-spacing:.4px}
+.hsub{font-size:11px;color:var(--muted)}
+.upd{margin-left:auto;text-align:right;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.upd .stale{color:var(--gold)}
+main{max-width:1100px;margin:0 auto;padding:14px 16px}
+.path{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.path .sep{color:var(--line);font-size:15px}
+.schip{padding:8px 15px;border:1px solid var(--line);border-radius:20px;background:var(--panel);font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s}
+.schip.on{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
+.tchip{padding:7px 13px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s}
+.tchip.on{border-color:var(--acc);color:var(--acc);background:var(--acc-dim)}
+.pulse{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.pulse::-webkit-scrollbar{display:none}
+.pchip{flex:none;padding:6px 11px;border-radius:9px;background:var(--panel);border:1px solid var(--line);font-size:11.5px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.pchip b{font-family:var(--mono);color:var(--text);margin-left:5px}
+.pchip.on{border-color:var(--acc);color:var(--acc)}
+.pchip.on b{color:var(--acc)}
+.fbar{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.search{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--text);font-size:13px;outline:none}
+.search:focus{border-color:var(--acc)}
+.fbtn{padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer}
+.fbtn.active{border-color:var(--acc);color:var(--acc)}
+.fpanel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.fpanel.open{display:block}
+.fsec{font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px}
+.fsec:first-child{margin-top:0}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.fgroup label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.fgroup select,.fgroup input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--text);font-size:12.5px;outline:none;color-scheme:dark}
+.frange{display:flex;gap:6px}
+.chks{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+.chks label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer}
+.chks input{accent-color:var(--acc)}
+.prox{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.xchip{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);font-size:12px;color:var(--muted);cursor:pointer}
+.xchip.on{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.xchip.up{border-color:var(--up);color:var(--up);background:var(--up-dim)}
+.xchip.dn{border-color:var(--dn);color:var(--dn);background:var(--dn-dim)}
+.prox .thwrap{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted)}
+.prox input{width:58px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--text);font-size:12px;outline:none}
+.widths{display:flex;gap:6px;flex-wrap:wrap}
+.wchip{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);font-size:12px;color:var(--muted);cursor:pointer}
+.wchip.on{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.freset{margin-top:12px;font-size:12px;color:var(--dn);cursor:pointer;background:none;border:none}
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)}
+.count{font-family:var(--mono)}
+.toolbar select{margin-left:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--text);font-size:12px}
+.copy{padding:6px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);font-size:11.5px;cursor:pointer}
+.copy:active{color:var(--acc);border-color:var(--acc)}
+.rows{display:flex;flex-direction:column;gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px}
+.sym{font-weight:700;font-size:15px;letter-spacing:.3px}
+.sec{font-size:10px;color:var(--muted);display:block;font-weight:400;margin-top:1px}
+.ltp{font-family:var(--mono);font-size:15px;font-weight:600;text-align:right}
+.badge{justify-self:end;display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.4px}
+.badge .pct,.badge .bt{font-family:var(--mono);font-weight:600}
+.badge .bt{opacity:.85}
+.b-up{background:var(--up-dim);color:var(--up)}
+.b-up2{background:var(--blue-dim);color:var(--blue)}
+.b-gz{background:var(--gold-dim);color:var(--gold)}
+.b-dn{background:var(--dn-dim);color:var(--dn)}
+.b-mut{background:var(--panel2);color:var(--muted)}
+.rail-wrap{grid-column:1/-1;margin:4px 0 2px}
+.rail{position:relative;height:8px;border-radius:4px;background:var(--panel2);border:1px solid var(--line)}
+.rail .gz{position:absolute;top:0;bottom:0;background:var(--gold-dim);border-left:1px solid var(--gold);border-right:1px solid var(--gold)}
+.rail .dot{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--bg)}
+.rail-lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px}
+.meta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11px;color:var(--muted)}
+.meta b{color:var(--text);font-family:var(--mono);font-weight:600}
+.meta .wtag{color:var(--blue)}
+.empty{text-align:center;color:var(--muted);padding:40px 0;font-size:13px}
+.loading{text-align:center;color:var(--muted);padding:60px 0}
+footer{max-width:1100px;margin:20px auto;padding:0 16px;font-size:10.5px;color:var(--muted);text-align:center}
+@media(min-width:760px){.rows{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <span class="wordmark">Tapewatch</span>
+    <div>
+      <div class="htitle">Crypto · Scalping &amp; Positional</div>
+      <div class="hsub">CoinSwitch universe · 24×7 · auto-refreshes every 5 min</div>
+    </div>
+    <div class="upd" id="upd">loading…</div>
+  </div>
+</header>
+
+<main>
+  <div class="path" id="path"></div>
+  <div class="pulse" id="pulse"></div>
+
+  <div class="fbar">
+    <input class="search" id="search" placeholder="Search symbol…" autocomplete="off">
+    <button class="fbtn" id="ftoggle">Filters</button>
+  </div>
+
+  <div class="fpanel" id="fpanel">
+    <div class="fsec">Breakout time window (IST) — breakouts only, Golden Zone excluded</div>
+    <div class="fgrid">
+      <div class="fgroup"><label>From</label><input id="tFrom" type="time" step="60"></div>
+      <div class="fgroup"><label>To</label><input id="tTo" type="time" step="60"></div>
+    </div>
+    <div class="fsec">Crossovers on SELECTED timeframe — tap chip to cycle: off → ± either side → ↑ first above second → ↓ first below second · gap ≤ % box</div>
+    <div class="prox">
+      <span class="xchip" data-px="p921">9 × 21 EMA</span>
+      <span class="xchip" data-px="p950">9 × 50 EMA</span>
+      <span class="xchip" data-px="p9200">9 × 200 EMA</span>
+      <span class="xchip" data-px="pvwap">LTP × VWAP</span>
+      <span class="thwrap">gap ≤ <input id="pTh" type="number" value="0.3" step="0.1" min="0"> % (positive number — direction is set by the chip)</span>
+    </div>
+    <div class="fsec">Momentum &amp; context</div>
+    <div class="fgrid">
+      <div class="fgroup"><label>RSI Daily</label><div class="frange"><input id="rsiDmin" type="number" placeholder="min"><input id="rsiDmax" type="number" placeholder="max"></div></div>
+      <div class="fgroup"><label>RSI 4H</label><div class="frange"><input id="rsi4min" type="number" placeholder="min"><input id="rsi4max" type="number" placeholder="max"></div></div>
+      <div class="fgroup"><label>RSI 30m</label><div class="frange"><input id="rsi30min" type="number" placeholder="min"><input id="rsi30max" type="number" placeholder="max"></div></div>
+      <div class="fgroup"><label>RSI 5m</label><div class="frange"><input id="rsi5min" type="number" placeholder="min"><input id="rsi5max" type="number" placeholder="max"></div></div>
+      <div class="fgroup"><label>RSI Weekly</label><div class="frange"><input id="rsiWmin" type="number" placeholder="min"><input id="rsiWmax" type="number" placeholder="max"></div></div>
+      <div class="fgroup"><label>RSI Monthly</label><div class="frange"><input id="rsiMmin" type="number" placeholder="min"><input id="rsiMmax" type="number" placeholder="max"></div></div>
+      <div class="fgroup"><label>Quote</label><select id="fQuote"><option value="">Any</option><option>INR</option><option>USD</option></select></div>
+      <div class="fgroup"><label>Prev daily candle</label>
+        <select id="fCandle"><option value="">Any</option><option>Bullish</option><option>Bearish</option><option>Doji</option><option>Hammer</option><option>Shooting Star</option><option>Bullish Marubozu</option><option>Bearish Marubozu</option></select>
+      </div>
+      <div class="fgroup"><label>Min 7-day avg volume</label><input id="fVol" type="number" placeholder="e.g. 500000"></div>
+      <div class="fgroup"><label>Rect BO distance %</label><div class="frange"><input id="boMin" type="number" placeholder="min" step="0.5"><input id="boMax" type="number" value="5" placeholder="max" step="0.5"></div></div>
+    </div>
+    <div class="chks" style="margin-top:10px">
+      <label><input type="checkbox" id="fE9"> Above EMA 9 (sel. TF)</label>
+      <label><input type="checkbox" id="fE21"> Above EMA 21 (sel. TF)</label>
+      <label><input type="checkbox" id="fVwap"> Above VWAP</label>
+    </div>
+    <div class="fsec" id="wsec">Rectangle range width</div>
+    <div class="widths" id="widths">
+      <span class="wchip on" data-w="">Any width</span>
+      <span class="wchip" data-w="VN">Very narrow</span>
+      <span class="wchip" data-w="N">Narrow</span>
+      <span class="wchip" data-w="M">Medium</span>
+      <span class="wchip" data-w="W">Wide</span>
+    </div>
+    <button class="freset" id="freset">Reset all filters</button>
+  </div>
+
+  <div class="toolbar">
+    <span class="count" id="count">—</span>
+    <button class="copy" id="copyBtn">Copy symbols</button>
+    <select id="sort">
+      <option value="pct">Sort: distance %</option>
+      <option value="time">Sort: breakout time</option>
+      <option value="sym">Sort: symbol</option>
+      <option value="rsiD">Sort: RSI daily</option>
+      <option value="width">Sort: range width</option>
+      <option value="vol">Sort: volume</option>
+    </select>
+  </div>
+
+  <div class="rows" id="rows"><div class="loading">Loading data.json…</div></div>
+</main>
+
+<footer>
+  Tapewatch Crypto · S1 doji &amp; S2 rect breakouts on 5m / 30m / 4H / D / W / M · 24×7 ·
+  breakout times (IST) from today's 5-min closes · auto-refreshes every 5 min · analysis tool, not investment advice.
+</footer>
+
+<script>
+/* ================= CONFIG ================= */
+const CFG = {
+  BO_MAX: 5, NEAR: 2,
+  WIDTH: {
+    M:   { VN: 40, N: 80, M: 160 },
+    W:   { VN: 20, N: 40, M: 80  },
+    D:   { VN: 10, N: 20, M: 40  },
+    H4:  { VN: 4,  N: 8,  M: 16  },
+    M30: { VN: 2,  N: 4,  M: 8   },
+    M5:  { VN: 1,  N: 2,  M: 4   },
+  },
+  STALE_HOURS: 1,
+  REFRESH_MS: 5 * 60 * 1000,
+};
+
+const STRATS = {
+  S1: { label:'S1 · Doji Breakout', kind:'doji', tfs: [
+    { k:'m5',  lab:'5m',    get:r=>r.p5  },
+    { k:'m30', lab:'30m',   get:r=>r.p30 },
+    { k:'h4',  lab:'4H',    get:r=>r.p4  },
+    { k:'d',   lab:'Day',   get:r=>r.pd  },
+    { k:'w',   lab:'Week',  get:r=>r.pw  },
+    { k:'m',   lab:'Month', get:r=>r.pm  },
+  ]},
+  S2: { label:'S2 · Rect Breakout', kind:'rect', tfs: [
+    { k:'m5',  lab:'5m · 5',    wtf:'M5',  get:r=>({max:r.m5Max, min:r.m5Min, w:r.m5W }) },
+    { k:'m30', lab:'30m · 8',   wtf:'M30', get:r=>({max:r.m30Max,min:r.m30Min,w:r.m30W}) },
+    { k:'h4',  lab:'4H · 13',   wtf:'H4',  get:r=>({max:r.h4Max, min:r.h4Min, w:r.h4W }) },
+    { k:'d',   lab:'Day · 30',  wtf:'D',   get:r=>({max:r.dMax,  min:r.dMin,  w:r.dW  }) },
+    { k:'w',   lab:'Week · 21', wtf:'W',   get:r=>({max:r.wMax,  min:r.wMin,  w:r.wW  }) },
+    { k:'m',   lab:'Month · 23',wtf:'M',   get:r=>({max:r.mMax,  min:r.mMin,  w:r.mW  }) },
+  ]},
+};
+const DOJI_SIGNALS = ['HIGH BO','CLOSE BO','LOW BD','GOLDEN ZONE','DOJI WATCH'];
+const RECT_SIGNALS = ['UPPER BO','NEAR UPPER','LOWER BD','NEAR LOWER','INSIDE'];
+const BT_KEY = { 'HIGH BO':'dh', 'CLOSE BO':'dc', 'LOW BD':'dl', 'UPPER BO':'u', 'LOWER BD':'l' };
+const emaOf = (r, k) => r.ema?.[curTF().k]?.[k] ?? null;   // EMA of the SELECTED timeframe
+const PROX = {
+  p921:  { a:r=>emaOf(r,'e9'),  b:r=>emaOf(r,'e21')  },
+  p950:  { a:r=>emaOf(r,'e9'),  b:r=>emaOf(r,'e50')  },
+  p9200: { a:r=>emaOf(r,'e9'),  b:r=>emaOf(r,'e200') },
+  pvwap: { a:r=>r.ltp, b:r=>r.vwap },
+};
+
+let DATA = [], strat = 'S1', tfIdx = 0, sigFilter = '', widthFilter = '', proxSt = {};
+
+/* ================= STRATEGY ENGINE ================= */
+const curTF = () => STRATS[strat].tfs[tfIdx];
+
+const btFor = (sig, r) => { const k = BT_KEY[sig]; return k ? (r.bt?.[curTF().k]?.[k] ?? null) : null; };
+
+function evalDoji(r, c) {
+  if (!c || c.pat !== 'Doji' || r.ltp == null) return null;
+  const ltp = r.ltp;
+  if (ltp > c.h) return { sig:'HIGH BO', cls:'b-up', pct:(ltp-c.h)/c.h*100, c };
+  if (ltp < c.l) return { sig:'LOW BD', cls:'b-dn', pct:-(c.l-ltp)/c.l*100, c };
+  const lo = Math.min(c.f50, c.f618), hi = Math.max(c.f50, c.f618);
+  if (ltp >= lo && ltp <= hi) return { sig:'GOLDEN ZONE', cls:'b-gz', pct:(ltp-c.c)/c.c*100, c };
+  if (ltp > c.c) return { sig:'CLOSE BO', cls:'b-up2', pct:(ltp-c.c)/c.c*100, c };
+  return { sig:'DOJI WATCH', cls:'b-mut', pct:(ltp-c.c)/c.c*100, c };
+}
+
+function bucket(w, tf) {
+  const t = CFG.WIDTH[tf];
+  if (w == null || !t) return null;
+  if (w <= t.VN) return 'VN'; if (w <= t.N) return 'N'; if (w <= t.M) return 'M';
+  return 'W';
+}
+const BUCKET_LABEL = { VN:'Very narrow', N:'Narrow', M:'Medium', W:'Wide' };
+
+function evalRect(r, b, tf) {
+  if (!b || b.max == null || b.min == null || r.ltp == null) return null;
+  const ltp = r.ltp, wb = bucket(b.w, tf);
+  const base = { max:b.max, min:b.min, w:b.w, wb };
+  if (ltp > b.max)
+    return { sig:'UPPER BO', cls:'b-up', pct:(ltp-b.max)/b.max*100, ...base };
+  if ((b.max-ltp)/b.max*100 <= CFG.NEAR)
+    return { sig:'NEAR UPPER', cls:'b-up2', pct:-(b.max-ltp)/b.max*100, ...base };
+  if (ltp < b.min)
+    return { sig:'LOWER BD', cls:'b-dn', pct:-(b.min-ltp)/b.min*100, ...base };
+  if ((ltp-b.min)/b.min*100 <= CFG.NEAR)
+    return { sig:'NEAR LOWER', cls:'b-dn', pct:(ltp-b.min)/b.min*100, ...base };
+  return { sig:'INSIDE', cls:'b-mut', pct:(ltp-b.min)/(b.max-b.min)*100-50, ...base };
+}
+
+function evaluate(r) {
+  const tf = curTF();
+  const ev = STRATS[strat].kind === 'doji' ? evalDoji(r, tf.get(r)) : evalRect(r, tf.get(r), tf.wtf);
+  if (ev) ev.t = btFor(ev.sig, r);
+  return ev;
+}
+
+/* ================= FILTERS ================= */
+const $ = id => document.getElementById(id);
+function inRange(v, lo, hi) {
+  if (v == null) return !(lo || hi);
+  if (lo !== '' && v < +lo) return false;
+  if (hi !== '' && v > +hi) return false;
+  return true;
+}
+const nearPct = (a, b, th) => a != null && b != null && b !== 0 && Math.abs(a - b) / Math.abs(b) * 100 <= th;
+
+function boOk(ev) {
+  if (ev.sig !== 'UPPER BO' && ev.sig !== 'LOWER BD') return true;
+  return inRange(Math.abs(ev.pct), $('boMin').value, $('boMax').value);
+}
+
+function currentList() {
+  const q = $('search').value.trim().toUpperCase();
+  const tF = $('tFrom').value, tT = $('tTo').value, timeOn = !!(tF || tT);
+  const th = Math.abs(+$('pTh').value) || 0.3;  // direction comes from the chip; number is always a positive gap
+  const out = [];
+  for (const r of DATA) {
+    const ev = evaluate(r);
+    if (!ev || !boOk(ev)) continue;
+    if (sigFilter && ev.sig !== sigFilter) continue;
+    if (STRATS[strat].kind === 'rect' && widthFilter && ev.wb !== widthFilter) continue;
+    if (timeOn) {
+      if (!ev.t) continue;                       // no breakout time = not a timed breakout (GZ/near/inside out)
+      if (tF && ev.t < tF) continue;
+      if (tT && ev.t > tT) continue;
+    }
+    let pxOk = true;
+    for (const id in proxSt) {
+      const st = proxSt[id]; if (!st) continue;
+      const p = PROX[id], a = p.a(r), b = p.b(r);
+      if (a == null || b == null || b === 0) { pxOk = false; break; }
+      const d = (a - b) / Math.abs(b) * 100;          // signed % gap: + = first above second
+      if (st === 1 && Math.abs(d) > th) { pxOk = false; break; }
+      if (st === 2 && !(d > 0 && d <= th))  { pxOk = false; break; }
+      if (st === 3 && !(d < 0 && -d <= th)) { pxOk = false; break; }
+    }
+    if (!pxOk) continue;
+    if (q && !r.s.includes(q)) continue;
+    if (!inRange(r.rsiD, $('rsiDmin').value, $('rsiDmax').value)) continue;
+    if (!inRange(r.rsi4, $('rsi4min').value, $('rsi4max').value)) continue;
+    if (!inRange(r.rsi30, $('rsi30min').value, $('rsi30max').value)) continue;
+    if (!inRange(r.rsi5, $('rsi5min').value, $('rsi5max').value)) continue;
+    if (!inRange(r.rsiW, $('rsiWmin').value, $('rsiWmax').value)) continue;
+    if (!inRange(r.rsiM, $('rsiMmin').value, $('rsiMmax').value)) continue;
+    const fq = $('fQuote').value;
+    if (fq && r.q !== fq) continue;
+    const fc = $('fCandle').value;
+    if (fc && !(r.pd && r.pd.pat === fc)) continue;
+    if ($('fE9').checked)  { const v = emaOf(r,'e9');  if (!(v != null && r.ltp > v)) continue; }
+    if ($('fE21').checked) { const v = emaOf(r,'e21'); if (!(v != null && r.ltp > v)) continue; }
+    if ($('fVwap').checked && !(r.vwap != null && r.ltp > r.vwap)) continue;
+    const mv = $('fVol').value;
+    if (mv && !(r.v7 >= +mv)) continue;
+    out.push({ r, ev });
+  }
+  const key = $('sort').value;
+  out.sort((a, b) => {
+    if (key === 'sym')   return a.r.s < b.r.s ? -1 : 1;
+    if (key === 'time')  return (a.ev.t ?? '99:99') < (b.ev.t ?? '99:99') ? -1 : 1;
+    if (key === 'rsiD')  return (b.r.rsiD ?? -1) - (a.r.rsiD ?? -1);
+    if (key === 'width') return (a.ev.w ?? 1e9) - (b.ev.w ?? 1e9);
+    if (key === 'vol')   return (b.r.v7 ?? 0) - (a.r.v7 ?? 0);
+    return Math.abs(b.ev.pct ?? 0) - Math.abs(a.ev.pct ?? 0);
+  });
+  return out;
+}
+
+/* ================= RENDER ================= */
+const fmtVol = v => v == null ? '—'
+  : v >= 1e7 ? (v/1e7).toFixed(1)+'Cr' : v >= 1e5 ? (v/1e5).toFixed(1)+'L'
+  : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v;
+
+function rail(ev, r) {
+  let lo, hi, gz = '';
+  if (STRATS[strat].kind === 'doji') { lo = ev.c.l; hi = ev.c.h; } else { lo = ev.min; hi = ev.max; }
+  if (lo == null || hi == null || hi <= lo) return '';
+  const span = hi - lo, pad = span * 0.08;
+  const L = lo - pad, R = hi + pad, W = R - L;
+  const pos = Math.min(100, Math.max(0, (r.ltp - L) / W * 100));
+  if (STRATS[strat].kind === 'doji') {
+    const g1 = (Math.min(ev.c.f50, ev.c.f618) - L) / W * 100;
+    const g2 = (Math.max(ev.c.f50, ev.c.f618) - L) / W * 100;
+    gz = `<div class="gz" style="left:${g1}%;width:${g2-g1}%"></div>`;
+  }
+  const col = ev.cls === 'b-up' ? 'var(--up)' : ev.cls === 'b-dn' ? 'var(--dn)'
+            : ev.cls === 'b-gz' ? 'var(--gold)' : 'var(--blue)';
+  return `<div class="rail-wrap"><div class="rail">${gz}<div class="dot" style="left:${pos}%;background:${col}"></div></div>
+    <div class="rail-lab"><span>${lo}</span><span>${hi}</span></div></div>`;
+}
+
+function render() {
+  const list = currentList();
+  $('count').textContent = `${list.length} stocks`;
+  const sigs = STRATS[strat].kind === 'doji' ? DOJI_SIGNALS : RECT_SIGNALS;
+  const counts = Object.fromEntries(sigs.map(s => [s, 0]));
+  for (const r of DATA) { const ev = evaluate(r); if (ev && boOk(ev) && counts[ev.sig] != null) counts[ev.sig]++; }
+  $('pulse').innerHTML =
+    `<span class="pchip ${sigFilter===''?'on':''}" data-sig="">All<b>${Object.values(counts).reduce((a,b)=>a+b,0)}</b></span>` +
+    sigs.map(s => `<span class="pchip ${sigFilter===s?'on':''}" data-sig="${s}">${s}<b>${counts[s]}</b></span>`).join('');
+  document.querySelectorAll('.pchip').forEach(c => c.onclick = () => { sigFilter = c.dataset.sig; render(); });
+
+  const rowsEl = $('rows');
+  if (!list.length) { rowsEl.innerHTML = '<div class="empty">No stocks match. Loosen a filter or pick another signal chip.</div>'; return; }
+  rowsEl.innerHTML = list.slice(0, 400).map(({ r, ev }) => {
+    const pct = ev.pct == null ? '' : `<span class="pct">${ev.pct >= 0 ? '+' : ''}${ev.pct.toFixed(2)}%</span>`;
+    const bt = ev.t ? `<span class="bt">· ${ev.t}</span>` : '';
+    const wtag = STRATS[strat].kind === 'rect' ? `<span class="wtag">W <b>${ev.w}%</b> ${BUCKET_LABEL[ev.wb]||''}</span>` : '';
+    const gzTag = STRATS[strat].kind === 'doji' ? `<span>GZ <b>${ev.c.f50}–${ev.c.f618}</b></span>` : '';
+    return `<div class="card">
+      <a class="sym" href="https://www.tradingview.com/chart/?symbol=CRYPTO:${r.base}USD" target="_blank" rel="noopener">${r.s}<span class="sec">${r.q ?? ''}</span></a>
+      <div class="ltp">${r.ltp}</div>
+      <div></div>
+      <div class="badge ${ev.cls}">${ev.sig} ${pct}${bt}</div>
+      ${rail(ev, r)}
+      <div class="meta">
+        ${wtag}${gzTag}
+        <span>RSI D <b>${r.rsiD ?? '—'}</b></span><span>4H <b>${r.rsi4 ?? '—'}</b></span>
+        <span>30m <b>${r.rsi30 ?? '—'}</b></span><span>5m <b>${r.rsi5 ?? '—'}</b></span><span>W <b>${r.rsiW ?? '—'}</b></span><span>M <b>${r.rsiM ?? '—'}</b></span>
+        <span>E9 <b>${emaOf(r,'e9') ?? '—'}</b></span><span>E21 <b>${emaOf(r,'e21') ?? '—'}</b></span><span>VWAP <b>${r.vwap ?? '—'}</b></span><span>Vol <b>${fmtVol(r.v7)}</b></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ================= UI WIRING ================= */
+function drawPath() {
+  $('path').innerHTML =
+    Object.entries(STRATS).map(([id, s]) =>
+      `<span class="schip ${id===strat?'on':''}" data-id="${id}">${s.label}</span>`).join('') +
+    `<span class="sep">▸</span>` +
+    STRATS[strat].tfs.map((t, i) =>
+      `<span class="tchip ${i===tfIdx?'on':''}" data-i="${i}">${t.lab}</span>`).join('');
+  document.querySelectorAll('.schip').forEach(c => c.onclick = () => {
+    strat = c.dataset.id; tfIdx = 0; sigFilter = ''; drawPath(); render();
+  });
+  document.querySelectorAll('.tchip').forEach(c => c.onclick = () => {
+    tfIdx = +c.dataset.i; sigFilter = ''; drawPath(); render();
+  });
+  const isRect = STRATS[strat].kind === 'rect';
+  $('widths').style.display = isRect ? 'flex' : 'none';
+  $('wsec').style.display = isRect ? 'block' : 'none';
+}
+
+document.querySelectorAll('.wchip').forEach(w => w.onclick = () => {
+  document.querySelectorAll('.wchip').forEach(x => x.classList.remove('on'));
+  w.classList.add('on'); widthFilter = w.dataset.w; render();
+});
+const PROX_GLYPH = ['', ' ±', ' ↑', ' ↓'];
+function drawProx() {
+  document.querySelectorAll('.xchip').forEach(x => {
+    const st = proxSt[x.dataset.px] || 0;
+    x.textContent = x.dataset.base + PROX_GLYPH[st];
+    x.classList.toggle('on', st === 1);
+    x.classList.toggle('up', st === 2);
+    x.classList.toggle('dn', st === 3);
+  });
+}
+document.querySelectorAll('.xchip').forEach(x => {
+  x.dataset.base = x.textContent;
+  x.onclick = () => {
+    const id = x.dataset.px;
+    proxSt[id] = ((proxSt[id] || 0) + 1) % 4;
+    drawProx(); render();
+  };
+});
+$('ftoggle').onclick = () => { $('fpanel').classList.toggle('open'); $('ftoggle').classList.toggle('active'); };
+const TXT = ['search','tFrom','tTo','pTh','rsiDmin','rsiDmax','rsi4min','rsi4max','rsi30min','rsi30max','rsi5min','rsi5max','rsiWmin','rsiWmax','rsiMmin','rsiMmax','fVol','boMin','boMax'];
+TXT.forEach(id => $(id).oninput = render);
+['fCandle','fQuote','sort'].forEach(id => $(id).onchange = render);
+['fE9','fE21','fVwap'].forEach(id => $(id).onchange = render);
+$('freset').onclick = () => {
+  TXT.forEach(id => $(id).value = ''); $('pTh').value = '0.3'; $('boMax').value = '5';
+  $('fCandle').value = ''; $('fQuote').value = '';
+  ['fE9','fE21','fVwap'].forEach(id => $(id).checked = false);
+  sigFilter = ''; widthFilter = ''; proxSt = {};
+  drawProx();
+  document.querySelectorAll('.wchip').forEach(w => w.classList.toggle('on', w.dataset.w === ''));
+  render();
+};
+$('copyBtn').onclick = () => {
+  const syms = currentList().map(x => 'CRYPTO:' + x.r.base + 'USD').join(',');
+  navigator.clipboard.writeText(syms).then(() => {
+    $('copyBtn').textContent = 'Copied!';
+    setTimeout(() => $('copyBtn').textContent = 'Copy symbols', 1200);
+  });
+};
+
+/* ================= LOAD + AUTO-REFRESH ================= */
+let firstLoad = true;
+function loadData() {
+  fetch('data.json?t=' + Date.now())
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(j => {
+      DATA = j.rows || [];
+      const age = (Date.now() - new Date(j.updatedUtc).getTime()) / 36e5;
+      $('upd').innerHTML = j.updated + (age > CFG.STALE_HOURS ? ' <span class="stale">· stale</span>' : '');
+      if (firstLoad) { drawPath(); firstLoad = false; }
+      render();
+    })
+    .catch(e => {
+      if (firstLoad) {
+        $('rows').innerHTML = `<div class="empty">Could not load data.json (${e.message}).<br>Run the "Update scanner data" workflow once in the Actions tab, then refresh.</div>`;
+        $('upd').textContent = 'no data';
+      }
+    });
+}
+loadData();
+setInterval(loadData, CFG.REFRESH_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadData(); });
+</script>
+</body>
+</html>
